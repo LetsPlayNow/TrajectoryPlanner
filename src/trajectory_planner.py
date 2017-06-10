@@ -1,6 +1,9 @@
 import rospy
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import OccupancyGrid, Path
+from visualization_msgs.msg import MarkerArray, Marker
+import visualization_msgs
+import copy
 
 from move import Move
 from state import State
@@ -13,8 +16,8 @@ class TrajectoryPlanner:
         self.start = None
         self.goal = None
 
-        self.moves = [Move(0.1, 0, 0),  Move(0, 0.1, 0),
-                      Move(-1.0, 0, 0), Move(0, -0.1, 0)]
+        self.moves = [Move(0.05, 0, 0),  Move(0, 0.05, 0),
+                      Move(-0.05, 0, 0), Move(0, -0.05, 0)]
         self.robot = Robot(0.1, 0.1)
         self.is_working = False # Replace with mutex after all
 
@@ -22,7 +25,7 @@ class TrajectoryPlanner:
         self.start_subscriber = rospy.Subscriber("initialpose", PoseWithCovarianceStamped, self.new_start_callback)
         self.goal_subscriber = rospy.Subscriber("goal", PoseStamped, self.new_goal_callback)
 
-        self.path_publisher = rospy.Publisher("trajectory", Path, queue_size=4)
+        self.path_publisher = rospy.Publisher("trajectory", MarkerArray, queue_size=4)
         self.pose_publisher = rospy.Publisher("debug_pose", PoseStamped, queue_size=4)
 
     def ready_to_plan(self):
@@ -58,18 +61,69 @@ class TrajectoryPlanner:
             self.is_working = False
 
     # In future we can create field planner, which will contain object of algorhytm
+    # A* algorhytm based on http://web.mit.edu/eranki/www/tutorials/search/
     def replan(self):
-        # Now just publish plan
-        path = Path()
-        path.header.frame_id="map"
         rospy.loginfo("Planning was started...")
-        for move in self.moves:
-            new_state = self.start.try_apply(self.map, move, self.robot)
-            if new_state is not None:
-                path.poses.append(new_state.to_pose_stamped())
-                rospy.loginfo("New state!")
-        self.path_publisher.publish(path)
-        rospy.loginfo("Planning was finished...")
+        final_state = None
+        opened = [self.start]
+        closed = []
+
+        while opened:  # or while we have enough time
+            q = min(opened, key=lambda state: state.f)
+            opened.remove(q)
+            self.pose_publisher.publish(q.to_pose_stamped())
+            for move in self.moves:
+                successor = q.try_apply(self.map, move, self.robot)
+                if successor is not None:
+                    if successor.dist_to(self.goal) < 0.1:
+                        final_state = successor
+                        break
+                    successor.g = q.g + successor.dist_to(q)
+                    successor.h = successor.dist_to(self.goal)
+                    successor.f = successor.g + successor.h
+                    successor.parent = q
+
+                    better_node_with_same_position_exists_in_opened = any(other_successor.is_same_as(successor) and other_successor.f < successor.f for other_successor in opened)
+                    better_node_with_same_position_exists_in_closed = any(other_successor.is_same_as(successor) and other_successor.f < successor.f for other_successor in closed)
+                    if better_node_with_same_position_exists_in_opened or better_node_with_same_position_exists_in_closed:
+                        continue
+                    else:
+                        opened.append(successor)
+            closed.append(q)
+
+            if final_state is not None:  # Don't know are we need this
+                break
+
+        if final_state is None:
+            rospy.loginfo("No path found")
+        else:
+            # Restore path
+            rospy.loginfo("Restoring path from final state...")
+            current_state = copy.copy(final_state)
+            path = MarkerArray()
+            id = 0
+            while True:
+                pose_marker = current_state.to_marker(self.robot)
+                pose_marker.id = id
+                path.markers.append(pose_marker)
+
+                current_state = current_state.parent
+                id += 1
+
+                if current_state is None:
+                    break
+            self.path_publisher.publish(path)
+            rospy.loginfo("Planning was finished...")
+
+        # path = MarkerArray()
+        # rospy.loginfo("Planning was started...")
+        # for move in self.moves:
+        #     new_state = self.start.try_apply(self.map, move, self.robot)
+        #     if new_state is not None:
+        #         path.markers.append(new_state.to_marker(self.robot))
+        #         rospy.loginfo("New state!")
+        # self.path_publisher.publish(path)
+        # rospy.loginfo("Planning was finished...")
 
 
 def main():

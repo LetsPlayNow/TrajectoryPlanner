@@ -3,6 +3,7 @@ import rospy
 import tf.transformations
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
+from visualization_msgs.msg import Marker
 
 
 class State:
@@ -11,6 +12,9 @@ class State:
         self.y = y
         self.theta = theta
         self.parent = parent
+
+        # Variables for A* algorhytm
+        self.g = self.f = self.h = 0
 
     @staticmethod
     def from_pose(pose):
@@ -27,6 +31,9 @@ class State:
     def dist_to(self, o_s):
         return ((self.x - o_s.x)**2 + (self.y - o_s.y)**2)**0.5
 
+    def is_same_as(self, o_s):
+        return self.dist_to(o_s) < 0.01 # think a little bit better about this constant
+
     def apply(self, move):
         return State(self.x + move.dx, self.y + move.dy, self.theta + move.dtheta)
 
@@ -34,7 +41,9 @@ class State:
         model_state = copy.copy(self)
         model_state.parent = self
 
+        # TODO fix this misunderstanding with goal
         goal = self.apply(move)
+        goal.parent = self
         steps_count = max(int(self.dist_to(goal) / min(robot.height, robot.width)), 1)
         step = 1.0 / steps_count
 
@@ -57,6 +66,28 @@ class State:
         # TODO angle a little bit later
         return pose
 
+
+    def to_marker(self, robot):
+        marker = Marker()
+        marker.header.frame_id = "map"
+        marker.header.stamp = rospy.Time.now()
+        marker.pose.position.x = self.x
+        marker.pose.position.y = self.y
+        marker.pose.position.z = 0
+
+        marker.scale.x = robot.width
+        marker.scale.y = robot.height
+        marker.scale.z = 0.2
+
+        marker.color.r = 1.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
+        marker.color.a = 1.0
+
+        marker.type = Marker.CUBE
+        marker.action = marker.ADD
+
+        return marker
 
 
 

@@ -32,6 +32,7 @@ class Map:
         return 0 <= i < self.height and 0 <= j < self.width
 
     def is_allowed(self, state, robot):
+        was_error = False
         i, j = self.coord_to_indices(state.x, state.y)
         side = int((max(robot.width, robot.height) / self.resolution) / 2)
         try:
@@ -40,9 +41,9 @@ class Map:
                     if self.get_by_index(s_i, s_j) == 100:
                         return False
         except IndexError as e:
-            rospy.loginfo("Indices are out of range")
-            return False
-        return True
+            # rospy.loginfo("Indices are out of range")
+            was_error = True
+        return True and not was_error
 
 
 
