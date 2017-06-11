@@ -32,7 +32,8 @@ class State:
         return ((self.x - o_s.x)**2 + (self.y - o_s.y)**2)**0.5
 
     def is_same_as(self, o_s):
-        return self.dist_to(o_s) < 0.01 # think a little bit better about this constant
+        # Improoving this constant from 0.01 to 0.05 speed up my algorhytm 1000 times
+        return self.dist_to(o_s) < 0.05 # think a much better about this constant
 
     def apply(self, move):
         return State(self.x + move.dx, self.y + move.dy, self.theta + move.dtheta)
