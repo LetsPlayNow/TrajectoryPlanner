@@ -1,3 +1,4 @@
+#!/usr/bin/python2.7
 import rospy
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import OccupancyGrid, Path
@@ -16,9 +17,9 @@ class TrajectoryPlanner:
         self.start = None
         self.goal = None
 
-        self.moves = [Move(0.05, 0, 0),  Move(0, 0.05, 0),
-                      Move(-0.05, 0, 0), Move(0, -0.05, 0)]
-        self.robot = Robot(0.1, 0.1)
+        self.moves = [Move(0.2, 0, 0),  Move(0, 0.2, 0),
+                      Move(-0.2, 0, 0), Move(0, -0.2, 0)]
+        self.robot = Robot(0.5, 0.5)
         self.is_working = False # Replace with mutex after all
 
         self.map_subscriber = rospy.Subscriber("grid_map", OccupancyGrid, self.new_map_callback)
@@ -65,6 +66,7 @@ class TrajectoryPlanner:
     # In future we can create field planner, which will contain object of algorhytm
     # A* algorhytm based on http://web.mit.edu/eranki/www/tutorials/search/
     def replan(self):
+        # If we colud make result of is_same_as discrete we could use set here and speed up this algo
         rospy.loginfo("Planning was started...")
         final_state = None
         opened = [self.start]
@@ -77,12 +79,12 @@ class TrajectoryPlanner:
             for move in self.moves:
                 successor = q.try_apply(self.map, move, self.robot)
                 if successor is not None:
-                    if successor.dist_to(self.goal) < 0.1:
+                    if successor.dist_to(self.goal) < 0.5:
                         final_state = successor
                         break
                     successor.g = q.g + successor.dist_to(q)
                     successor.h = successor.dist_to(self.goal)
-                    successor.f = successor.g + successor.h
+                    successor.f = 0.3 * successor.g + successor.h
                     successor.parent = q
 
                     better_node_with_same_position_exists_in_opened = any(other_successor.is_same_as(successor) and other_successor.f < successor.f for other_successor in opened)
@@ -114,13 +116,12 @@ class TrajectoryPlanner:
             for move in self.moves:
                 new_item = item.try_apply(self.map, move, self.robot)
                 if new_item is not None:
-                    if new_item.dist_to(self.goal) < 0.1:
+                    if new_item.dist_to(self.goal) < 0.5:
                         final_state = new_item
                         break
                     else:
-                        if not any(other_item.is_same_as(new_item) for other_item in closed):
+                        if not any(other_item.is_same_as(new_item) for other_item in opened):
                             opened.insert(0, new_item)
-
             closed.append(item)
 
         if final_state is None:

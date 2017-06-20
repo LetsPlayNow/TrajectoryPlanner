@@ -33,7 +33,7 @@ class State:
 
     def is_same_as(self, o_s):
         # Improoving this constant from 0.01 to 0.05 speed up my algorhytm 1000 times
-        return self.dist_to(o_s) < 0.05 # think a much better about this constant
+        return self.dist_to(o_s) <= 0.1 # think a much better about this constant
 
     def apply(self, move):
         return State(self.x + move.dx, self.y + move.dy, self.theta + move.dtheta)
