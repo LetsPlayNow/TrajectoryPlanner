@@ -38,7 +38,8 @@ class Map:
         try:
             for s_i in range(i-side, i+side):
                 for s_j in range(j-side, j+side):
-                    if self.get_by_index(s_i, s_j) == 100:
+                    cell = self.get_by_index(s_i, s_j)
+                    if cell == 100 or cell == -1:
                         return False
         except IndexError as e:
             # rospy.loginfo("Indices are out of range")
