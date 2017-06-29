@@ -18,8 +18,10 @@ class TrajectoryPlanner:
         self.start = None
         self.goal = None
 
-        self.moves = [Move(0.1, 0, 0),  Move(0, 0.1, 0),
-                      Move(-0.1, 0, 0), Move(0, -0.1, 0)]
+        self.moves = [Move(0.1, 0),  # forward
+                      Move(-0.1, 0),  # back
+                      Move(0, 1.5708),  # turn left 90
+                      Move(0, -1.5708)] # turn right 90
         self.robot = Robot(0.5, 0.5)
         self.is_working = False # Replace with mutex after all
 
@@ -74,7 +76,7 @@ class TrajectoryPlanner:
 
     def replan(self):
         rospy.loginfo("Planning was started")
-        final_state = self.planner(self.map, self.moves, self.robot, self.start, self.goal)
+        final_state = self.planner(self.map, self.moves, self.robot, self.start, self.goal, self.pose_publisher)
 
         if final_state is None:
             rospy.loginfo("No path found")

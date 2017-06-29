@@ -2,6 +2,7 @@ from nav_msgs.msg import OccupancyGrid
 from exceptions import IndexError
 from geometry_msgs.msg import Point
 import rospy
+import math
 
 class Map:
     def __init__(self, grid_map):
@@ -34,7 +35,7 @@ class Map:
     def is_allowed(self, state, robot):
         was_error = False
         i, j = self.coord_to_indices(state.x, state.y)
-        side = int((max(robot.width, robot.height) / self.resolution) / 2)
+        side = int(math.floor((max(robot.width, robot.height) / self.resolution) / 2))
         try:
             for s_i in range(i-side, i+side):
                 for s_j in range(j-side, j+side):

@@ -2,7 +2,7 @@ import heapq
 
 # In future we can create field planner, which will contain object of algorhytm
 # A* algorhytm based on http://web.mit.edu/eranki/www/tutorials/search/
-def replan(map, moves, robot, start, goal):
+def replan(map, moves, robot, start, goal, pub):
     robot_dimension = min(robot.width, robot.height)
 
     final_state = None
@@ -14,6 +14,7 @@ def replan(map, moves, robot, start, goal):
         q = heapq.heappop(opened)[1]
         for move in moves:
             successor = q.try_apply(map, move, robot)
+            pub.publish(q.to_pose_stamped())
             if successor is not None:
                 if successor.dist_to(goal) < robot_dimension:
                     final_state = successor

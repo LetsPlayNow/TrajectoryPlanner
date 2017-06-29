@@ -5,6 +5,7 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from visualization_msgs.msg import Marker
 
+import math
 
 class State:
     def __init__(self, x=0.0, y=0.0, theta=0.0, parent=None):
@@ -27,17 +28,21 @@ class State:
         new_state.theta = yaw
         return new_state
 
-
     def dist_to(self, o_s):
         return ((self.x - o_s.x)**2 + (self.y - o_s.y)**2)**0.5
 
     # TODO use here robot constraints
+    # TODO add angle checking
+    # TODO make constants much smaller
     def is_same_as(self, o_s):
         # Improoving this constant from 0.01 to 0.05 speed up my algorhytm 1000 times
         return self.dist_to(o_s) <= 0.1 # think a much better about this constant
 
     def apply(self, move):
-        return State(self.x + move.dx, self.y + move.dy, self.theta + move.dtheta)
+        new_theta = self.theta + move.dtheta
+        new_x = self.x + math.cos(new_theta) * move.length
+        new_y = self.y + math.sin(new_theta) * move.length
+        return State(new_x, new_y, new_theta)
 
     def try_apply(self, _map, move, robot):
         model_state = copy.copy(self)
@@ -50,9 +55,12 @@ class State:
         step = 1.0 / steps_count
 
         for i in range(steps_count):
-            model_state.x += move.dx * step
-            model_state.y += move.dy * step
+            # Slightly change angle
             model_state.theta += move.dtheta * step
+
+            # Go in this direction
+            model_state.x += math.cos(model_state.theta) * move.length * step
+            model_state.y += math.sin(model_state.theta) * move.length * step
 
             if not _map.is_allowed(model_state, robot):
                 return None
@@ -65,8 +73,15 @@ class State:
         pose.pose.position.x = self.x
         pose.pose.position.y = self.y
         pose.pose.position.z = 0.25
-        # TODO angle a little bit later
+
+        quaternion = tf.transformations.quaternion_from_euler(0, 0, self.theta)
+        pose.pose.orientation.x = quaternion[0]
+        pose.pose.orientation.y = quaternion[1]
+        pose.pose.orientation.z = quaternion[2]
+        pose.pose.orientation.w = quaternion[3]
+
         return pose
+
 
 
     def to_marker(self, robot):
@@ -76,6 +91,12 @@ class State:
         marker.pose.position.x = self.x
         marker.pose.position.y = self.y
         marker.pose.position.z = 0
+
+        quaternion = tf.transformations.quaternion_from_euler(0, 0, self.theta)
+        marker.pose.orientation.x = quaternion[0]
+        marker.pose.orientation.y = quaternion[1]
+        marker.pose.orientation.z = quaternion[2]
+        marker.pose.orientation.w = quaternion[3]
 
         marker.scale.x = robot.width
         marker.scale.y = robot.height
