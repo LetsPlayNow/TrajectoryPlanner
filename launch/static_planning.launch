@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find trajectory_planner_py)/launch/test_environment.launch"/>
+
+  <node name="trajectory_planner" pkg="trajectory_planner_py" type="trajectory_planner.py">
+    <remap from="grid_map" to="map"/>
+  </node>
+</launch>

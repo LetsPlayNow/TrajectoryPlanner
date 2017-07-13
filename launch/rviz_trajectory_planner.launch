@@ -1,0 +1,3 @@
+<launch>
+    <node name="trajectory_planner_rviz" pkg="rviz" type="rviz" args="-d $(find trajectory_planner_py)/misc/trajectory_planner.rviz" /> 
+</launch>

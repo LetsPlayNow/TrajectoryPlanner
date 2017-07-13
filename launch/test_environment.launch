@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find trajectory_planner_py)/launch/rviz_trajectory_planner.launch"/>
+    <include file="$(find trajectory_planner_py)/launch/test_map.launch"/>
+</launch>

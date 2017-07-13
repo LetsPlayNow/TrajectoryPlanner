@@ -1,0 +1,4 @@
+<launch>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find trajectory_planner_py)/maps/mymap.yaml">
+  </node>
+</launch>
