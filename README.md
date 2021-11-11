@@ -5,24 +5,22 @@ This planner can calculate movement trajectory from start to goal positions on a
 
 ## Features
 ### 2D planning
-Planning works on a 2D occupancy grid, which 
-ros::OccupancyGrid is just a 2D array, where each cell represents a small area and can be in one of three states: occupied, free, unknown.
-It is a good map data structure for small wheel platforms and simple walking robots. You can get it from Rtabmap, hector_mapping or gmapping SLAM algorithms.
+Planning works on a 2D occupancy grid (ros::OccupancyGrid), which is just a 2D array, where each cell represents a small area and can be in one of three states: occupied, free, unknown. It is a good map data structure for small wheel platforms and simple walking robots. You can get it from Rtabmap, hector_mapping or gmapping SLAM algorithms.
 
 ### rospy based
-This package is based on [ROS][2] and built using Python 2, so you don't need to compile it. To use the package, move it into *catkin workspace* and run planning on predefined map: `roslaunch trajectory_planner_py static_planning.launch`
+This package is based on [ROS][2] and built using Python 2, so you don't need to compile it. To run the package, move it into *catkin workspace* and run planning on predefined map: `roslaunch trajectory_planner_py static_planning.launch`
 
 ## Description
 ### How planning works
-The planner is searching in the state space, where State is a vector of position and orientation of a robot. The Robot is a rectangular primitive with width and height parameters and a set of simple moves, which are described as vectors (length, dtheta) and represent moves like rotation and moving forward/backward. New states are derived from the previous ones by applying move transformations.
+The planner is searching in the state space, where State is a vector of position and orientation of a robot. The Robot is a rectangular primitive with width and height parameters and a set of simple moves, which are described as vectors (length, dtheta) and represent rotation and moving forward/backward. New states are derived from the previous ones by applying move transformations.
 
 ![apply_movement][7]
 
-We also check intermediate sub states on collisions with obstacles by simulating moves with a small time step.
+We also check intermediate sub states on collisions with obstacles by simulating moves with a small step.
 ![simulate_move][8]
 
 To start planning we need a map, start and goal positions, robot parameters and a set of available moves. Then we can get a tree of states by applying moves to the start state and repeating this for its "children".
-We use A* to search for a goal state in that tree.
+We use A* or BFS to search for a goal state in that tree.
 I got intuition for A* implementation from [this nice publication][9].
  
 ## ROS API
