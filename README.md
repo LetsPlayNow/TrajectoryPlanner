@@ -1,44 +1,29 @@
 # Trajectory planner
 
 ![trajectory_planner example][6]
-This planner is able to calculate movement trajectory on [ros::OccupancyGrid][1] for robot, using set of allowed moves for it.
-Given map, start and goal positions and possible movements, planner will try to find the way from start to goal positions, using one of available algorithms (A* and BFS implemented while now).
- 
+This planner can calculate movement trajectory from start to goal positions on a [ros::OccupancyGrid][1] using A* or BFS algorithms for a robot primitive that can perform a set of simple movements.
+
 ## Features
 ### 2D planning
-Planning works on 2D occupancy grid, which you can get from Rtabmap, hector_mapping or gmapping SLAM algorithms.
-OccupancyGrid is just 2D array, where each cell represent small area of real world and can be in one of three states: occupied, free, unknown.
-Using ros::OccupancyGrid is a good way for small wheel platforms or walking robots.
-
+Planning works on a 2D occupancy grid, which 
+ros::OccupancyGrid is just a 2D array, where each cell represents a small area and can be in one of three states: occupied, free, unknown.
+It is a good map data structure for small wheel platforms and simple walking robots. You can get it from Rtabmap, hector_mapping or gmapping SLAM algorithms.
 
 ### rospy based
-This package based on [ROS][2].  
-Due to Python 2 as main language you don't need to compile package.  
-Just move it into *catkin workspace* and run planning on predefined map: `roslaunch trajectory_planner_py static_planning.launch`
+This package is based on [ROS][2] and built using Python 2, so you don't need to compile it. To use the package, move it into *catkin workspace* and run planning on predefined map: `roslaunch trajectory_planner_py static_planning.launch`
 
 ## Description
 ### How planning works
-Basic idea of planner - search in state space, where State is a vector which represents position and orientation of a robot.
-Robot is a rectangular primitive with specified width and height.
-Robot also has some movements, which it can do.
-Each movement is a vector (length, dtheta), which can represent movements such as rotation and moving forward/backward.
-When we apply movement to one of available states (for example start state), we can get new state with different position and rotation.
+The planner is searching in the state space, where State is a vector of position and orientation of a robot. The Robot is a rectangular primitive with width and height parameters and a set of simple moves, which are described as vectors (length, dtheta) and represent moves like rotation and moving forward/backward. New states are derived from the previous ones by applying move transformations.
 
 ![apply_movement][7]
 
-Of course, on the way of this movement must not be any obstacles. 
-This is how we can get new state. It can be done by verifying substates when "simulating" yet another move.
+We also check intermediate sub states on collisions with obstacles by simulating moves with a small time step.
 ![simulate_move][8]
 
-So to start planning we should have map, start and goal positions, robot parameters and set of available moves for it.
-Then we can get huge tree of states by applying moves to start state and then to new states and etc.
-
-Now we need algorithm to effectively find state, which is the nearest to goal state.
-Current implementation of A* is not brilliant, but seems to be easy to understand.
-
-I got an idea of how to implement A* using [this nice publication][9].
-
-Architecture of this package is quite easy, so don't be scared to change something in source code ;)
+To start planning we need a map, start and goal positions, robot parameters and a set of available moves. Then we can get a tree of states by applying moves to the start state and repeating this for its "children".
+We use A* to search for a goal state in that tree.
+I got intuition for A* implementation from [this nice publication][9].
  
 ## ROS API
 
@@ -53,10 +38,7 @@ Goal pose for planner
 Array of robot's poses 
 
 ## Disclaimer
-This package is in development now.
-So be careful when using it.
-Some important things, like time limitation of path finding were not implemented yet.
- 
+This package is in development now and may contain bugs.
 
 [1]: http://docs.ros.org/jade/api/nav_msgs/html/msg/OccupancyGrid.html
 [2]: http://www.ros.org/
