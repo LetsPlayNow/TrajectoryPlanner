@@ -11,7 +11,7 @@ Planning works on a 2D occupancy grid (ros::OccupancyGrid), which is just a 2D a
 This package is based on [ROS][2] and built using Python 2, so you don't need to compile it. To run the package, move it into *catkin workspace* and run planning on predefined map: `roslaunch trajectory_planner_py static_planning.launch`
 
 ## Description
-### How planning works
+### How planner works
 The planner is searching in the state space, where State is a vector of position and orientation of a robot. The Robot is a rectangular primitive with width and height parameters and a set of simple moves, which are described as vectors (length, dtheta) and represent rotation and moving forward/backward. New states are derived from the previous ones by applying move transformations.
 
 ![apply_movement][7]
